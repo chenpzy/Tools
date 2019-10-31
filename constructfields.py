@@ -1,10 +1,11 @@
 import numpy as np
-
+import kspaceanalysis as ka
 
 '''
 ConDen(pos,grid)
 denmom2vel(mapden,mapmom,grid)
 interp0(field,grid)
+LCE(den,grid)
 '''
 
 def ConDen(pos,grid):
@@ -45,4 +46,30 @@ def interp0(field,grid):
 		if n0>0:
 			#print(i,j,k,n0)
 			field[i,j,k]=np.sum(field[i-1:i+2,j-1:j+2,k-1:k+2])*9.0/8
-            
+			
+			
+def LCE(den,grid):
+	'''
+	Linear continuity equation
+	given density, return velosity
+	unscaled
+	'''
+	den=den.reshape(grid,grid,grid)
+	kmod,kx,ky,kz=ka.karray(grid,True)
+	denk=np.fft.rfftn(denhalo)
+	velxk=np.zeros(denk.shape,dtype=type(denk))
+	velyk=np.zeros(denk.shape,dtype=type(denk))
+	velzk=np.zeros(denk.shape,dtype=type(denk))
+	velxk[1:,1:,1:]=kx[1:,1:,1:]*denk[1:,1:,1:,]/kmod[1:,1:,1:,]**2*(1j)
+	velyk[1:,1:,1:]=ky[1:,1:,1:]*denk[1:,1:,1:,]/kmod[1:,1:,1:,]**2*(1j)
+	velzk[1:,1:,1:]=kz[1:,1:,1:]*denk[1:,1:,1:,]/kmod[1:,1:,1:,]**2*(1j)
+
+	vel=np.zeros(grid,grid,grid,3)
+	vel[:,:,:,0]=np.fft.irfftn(velxk)
+	vel[:,:,:,1]=np.fft.irfftn(velyk)
+	vel[:,:,:,2]=np.fft.irfftn(velzk)
+	
+	return vel
+	
+	
+	
